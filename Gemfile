@@ -8,6 +8,7 @@ gem 'jbuilder', '~> 2.6.0'
 group :development do
   gem 'spring', '~>2.0.0'
   gem 'tzinfo-data', :platforms=>[:mingw, :mswin, :x64_mingw, :jruby]
+  gem 'rspec-rails', '~> 3.5.2'
 end
 
 gem 'pg', '~>0.19.0'
