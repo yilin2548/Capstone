@@ -27,5 +27,7 @@ module Capstone
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    Mongoid.load! './config/mongoid.yml'
   end
 end
