@@ -1,5 +1,5 @@
 class StatesController < ApplicationController
-  before_action :set_state, only: [:show, :edit, :update, :destroy]
+  before_action :set_state, only: [:show, :update, :destroy]
 
   # GET /states
   # GET /states.json
