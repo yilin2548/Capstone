@@ -5,3 +5,8 @@
 #
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
+City.destroy_all
+State.destroy_all
+
+City.create(:name=>"Baltimore")
+State.create(:name=>"Maryland")
