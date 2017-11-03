@@ -23,6 +23,10 @@ namespace :ptourist do
   def get_user first_name
     User.find_by(:email=>user_email(first_name))
   end
+  def get_type type_name
+    Type.find_by(:name=>type_name)
+  end
+
 
   def users first_names
     first_names.map {|fn| get_user(fn) }
@@ -49,12 +53,19 @@ namespace :ptourist do
     @mike_user ||= get_user("mike")
   end
 
+  def create_types types_name
+    types_name.each do |type_name|
+      puts "building type for #{type_name}"
+      type=Type.create!(:name=>type_name)
+    end
+  end
+
   def create_image organizer, img
     puts "building image for #{img[:caption]}, by #{organizer.name}"
     image=Image.create(:creator_id=>organizer.id,:caption=>img[:caption])
     organizer.add_role(Role::ORGANIZER, image).save
   end
-  def create_thing thing, organizer, members, images
+  def create_thing thing, organizer, members, images, types
     thing=Thing.create!(thing)
     organizer.add_role(Role::ORGANIZER, thing).save
     m=members.map { |member|
@@ -73,16 +84,22 @@ namespace :ptourist do
                      :creator_id=>organizer.id)
                 .tap {|ti| ti.priority=img[:priority] if img[:priority]}.save!
     end
+    types.each do |type|
+      puts "Add type #{type[:name]} for #{thing.name}"
+      TypeThing.new(:thing=>thing, :type=>type).save!
+      organizer.add_role(Role::ORGANIZER, type).save
+    end
   end
 
   desc "reset all data"
   task reset_all: [:users,:subjects] do
   end
 
-  desc "deletes things, images, and links" 
+  desc "deletes things, images, types and links" 
   task delete_subjects: :environment do
     puts "removing #{Thing.count} things and #{ThingImage.count} thing_images"
     puts "removing #{Image.count} images"
+    puts "removing #{Type.count} types and #{TypeThing.count} type_things"
     DatabaseCleaner[:active_record].clean_with(:truncation, {:except=>%w[users]})
     DatabaseCleaner[:mongoid].clean_with(:truncation)
   end
@@ -114,9 +131,11 @@ namespace :ptourist do
     puts "users:#{User.pluck(:name)}"
   end
 
-  desc "reset things, images, and links" 
+  desc "reset things, images, types and links" 
   task subjects: [:users] do
-    puts "creating things, images, and links"
+    puts "creating things, images, types and links"
+    types=["Museum","Aquarium","Hotel","Service","Transport"]
+    create_types types
 
     thing={:name=>"B&O Railroad Museum",
     :description=>"Discover your adventure at the B&O Railroad Museum in Baltimore, Maryland. Explore 40 acres of railroad history at the birthplace of American railroading. See, touch, and hear the most important American railroad collection in the world! Seasonal train rides for all ages.",
@@ -138,7 +157,8 @@ namespace :ptourist do
      :lng=>-76.6327453,
      :lat=>39.2854217},
     ]
-    create_thing thing, organizer, members, images
+    types=[get_type("Museum")]
+    create_thing thing, organizer, members, images, types
 
     thing={:name=>"Baltimore Water Taxi",
     :description=>"The Water Taxi is more than a jaunt across the harbor; it’s a Baltimore institution and a way of life. Every day, thousands of residents and visitors not only rely on us to take them safely to their destinations, they appreciate our knowledge of the area and our courteous service. And every day, hundreds of local businesses rely on us to deliver customers to their locations.  We know the city. We love the city. We keep the city moving. We help keep businesses thriving. And most importantly, we offer the most unique way to see Baltimore and provide an unforgettable experience that keeps our passengers coming back again and again.",
@@ -164,7 +184,8 @@ namespace :ptourist do
      :lng=>-76.605206,
      :lat=>39.284038}
     ]
-    create_thing thing, organizer, members, images
+    types=[get_type("Museum"), get_type("Service")]
+    create_thing thing, organizer, members, images, types
 
     thing={:name=>"Rent-A-Tour",
     :description=>"Professional guide services and itinerary planner in Baltimore, Washington DC, Annapolis and the surronding region",
@@ -184,7 +205,8 @@ namespace :ptourist do
      :priority=>0
      }
     ]
-    create_thing thing, organizer, members, images
+    types=[get_type("Transport"), get_type("Service")]
+    create_thing thing, organizer, members, images, types
 
     thing={:name=>"Holiday Inn Timonium",
     :description=>"Group friendly located just a few miles north of Baltimore's Inner Harbor. Great neighborhood in Baltimore County",
@@ -199,7 +221,8 @@ namespace :ptourist do
      :priority=>0
      }
     ]
-    create_thing thing, organizer, members, images
+    types=[get_type("Hotel"), get_type("Service")]
+    create_thing thing, organizer, members, images, types
 
     thing={:name=>"National Aquarium",
     :description=>"Since first opening in 1981, the National Aquarium has become a world-class attraction in the heart of Baltimore. Recently celebrating our 35th Anniversary, we continue to be a symbol of urban renewal and a source of pride for Marylanders. With a mission to inspire the world’s aquatic treasures, the Aquarium is consistently ranked as one of the nation’s top aquariums and has hosted over 51 million guests since opening. A study by the Maryland Department of Economic and Employment Development determined that the Aquarium annually generates nearly $220 million in revenues, 2,000 jobs, and $6.8 million in State and local taxes. It was also recently named one of Baltimore’s Best Places to Work! In addition to housing nearly 20,000 animals, we have countless science-based education programs and hands-on conservation projects spanning from right here in the Chesapeake Bay to abroad in Costa Rica. Once you head inside, The National Aquarium has the ability to transport you all over the world in a matter of hours to discover hundreds of incredible species. From the Freshwater Crocodile in our Australia: Wild Extremes exhibit all the way to a Largetooth Sawfish in the depths of Shark Alley. Recently winning top honors from the Association of Zoos and Aquariums for outstanding design, exhibit innovation and guest engagement, we can’t forget about Living Seashore; an exhibit where guests can touch Atlantic stingrays, Horseshoe crabs, and even Moon jellies if they wish! It is a place for friends, family, and people from all walks of life to come and learn about the extraordinary creatures we share our planet with. Through education, research, conservation action and advocacy, the National Aquarium is truly pursuing a vision to change the way humanity cares for our ocean planet.",
@@ -229,7 +252,8 @@ namespace :ptourist do
      :lat=>39.2851,
      }
     ]
-    create_thing thing, organizer, members, images
+    types=[get_type("Museum"), get_type("Aquarium")]
+    create_thing thing, organizer, members, images, types
 
     thing={:name=>"Hyatt Place Baltimore",
     :description=>"The New Hyatt Place Baltimore/Inner Harbor, located near Fells Point, offers a refreshing blend of style and innovation in a neighborhood alive with cultural attractions, shopping and amazing local restaurants. 
@@ -289,7 +313,8 @@ Work up a sweat in our 24-hour StayFit Gym, which features Life Fitness® cardio
      :lat=>39.2847
      }
     ]
-    create_thing thing, organizer, members, images
+    types=[get_type("Hotel"), get_type("Service")]
+    create_thing thing, organizer, members, images, types
 
     organizer=get_user("peter")
     image= {:path=>"db/bta/aquarium.jpg",
@@ -355,6 +380,7 @@ Work up a sweat in our 24-hour StayFit Gym, which features Life Fitness® cardio
      }
     create_image organizer, image
 
+    puts "#{Type.count} types created and #{TypeThing.count("distinct type_id")} with things"
     puts "#{Thing.count} things created and #{ThingImage.count("distinct thing_id")} with images"
     puts "#{Image.count} images created and #{ThingImage.count("distinct image_id")} for things"
   end

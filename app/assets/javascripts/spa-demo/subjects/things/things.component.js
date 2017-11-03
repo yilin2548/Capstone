@@ -36,16 +36,21 @@
                                    "$state","$stateParams",
                                    "spa-demo.authz.Authz",
                                    "spa-demo.subjects.Thing",
-                                   "spa-demo.subjects.ThingImage"];
+                                   "spa-demo.subjects.ThingImage",
+                                   "spa-demo.subjects.ThingType",
+                                   "spa-demo.subjects.ThingLinkableType"];
   function ThingEditorController($scope, $q, $state, $stateParams, 
-                                 Authz, Thing, ThingImage) {
+                                 Authz, Thing, ThingImage,
+                                 ThingType, ThingLinkableType) {
     var vm=this;
+    vm.selected_linkables=[];
     vm.create = create;
     vm.clear  = clear;
     vm.update  = update;
     vm.remove  = remove;
     vm.haveDirtyLinks = haveDirtyLinks;
     vm.updateImageLinks = updateImageLinks;
+    vm.linkTypes = linkTypes;
 
     vm.$onInit = function() {
       console.log("ThingEditorController",$scope);
@@ -79,8 +84,11 @@
             ti.originalPriority = ti.priority;            
           });                     
         });
-      $q.all([vm.item.$promise,vm.images.$promise]).catch(handleError);
+      vm.types = ThingType.query({thing_id:itemId});
+      vm.linkable_types = ThingLinkableType.query({thing_id:itemId});
+      $q.all([vm.item.$promise,vm.images.$promise,vm.types.$promise]).catch(handleError);
     }
+
     function haveDirtyLinks() {
       for (var i=0; vm.images && i<vm.images.length; i++) {
         var ti=vm.images[i];
@@ -110,7 +118,9 @@
       vm.item.errors = null;
       var update=vm.item.$update();
       updateImageLinks(update);
+      linkTypes(update);
     }
+
     function updateImageLinks(promise) {
       console.log("updating links to images");
       var promises = [];
@@ -131,6 +141,25 @@
           $scope.thingform.$setPristine();
           reload(); 
         }, 
+        handleError);    
+    }
+
+    function linkTypes(parentPromise) {
+      var promises=[];
+      if (parentPromise) { promises.push(parentPromise); }
+      angular.forEach(vm.selected_linkables, function(linkable){
+        var resource=ThingType.save({thing_id:vm.item.id}, {type_id:linkable});
+        promises.push(resource.$promise);
+      });
+
+      vm.selected_linkables=[];
+      console.log("waiting for promises", promises);
+      $q.all(promises).then(
+        function(response){
+          console.log("promise.all response", response); 
+          $scope.thingform.$setPristine();
+          reload(); 
+        },
         handleError);    
     }
 

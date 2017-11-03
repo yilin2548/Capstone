@@ -25,6 +25,7 @@
     BasePolicy.prototype.canCreate = function() {
       //console.log("BasePolicy.canCreate");
       return Authz.isOriginator(this.resourceName);
+      // return true
     };
     BasePolicy.prototype.canQuery = function() {
       //console.log("BasePolicy.canQuery");

@@ -73,6 +73,34 @@
     <span class="invalid">{{$ctrl.item.errors.images}}</span>
   </div>
 
+  <div class="thing-types row col-lg-12"
+       ng-show="$ctrl.item.id">
+    <label class="col-xs-3">Types:</label>
+    <ul class="thing-types col-xs-9">
+      <li ng-repeat="tt in $ctrl.types">
+        <a data-ui-sref="types({id:tt.type_id})">
+          <span class="id type_id">{{tt.type_id}}</span>
+          {{tt.type_name}}</a>
+      </li>
+    </ul>
+    <span class="invalid">{{$ctrl.item.errors.thing_types}}</span>
+  </div>
+
+  <div class="linkable-types row col-lg-12"
+       ng-show="$ctrl.linkable_types.length>0 &&
+                $ctrl.authz.authenticated">
+    <label class="col-xs-3">Linkable Types:</label>
+    <div class="link-types" class="col-xs-9">
+      <select name="linkable-types" 
+              ng-model="$ctrl.selected_linkables"               
+              multiple>
+        <option ng-repeat="type in $ctrl.linkable_types | orderBy:'name'"
+                value="{{type.id}}">{{type.name}}</option>
+      </select>
+    </div>
+    <span class="invalid">{{$ctrl.item.errors.linkable_types}}</span>
+  </div>
+
   <div class="thing-controls"
        ng-show="$ctrl.authz.authenticated">
     <button ng-show="!$ctrl.item.id && $ctrl.authz.canCreate"
